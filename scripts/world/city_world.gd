@@ -619,11 +619,12 @@ func _build_elevated_train() -> void:
 
 	# Escaleras exteriores simplificadas, colocadas en los extremos de la estación.
 	for side_z in [-1.0, 1.0]:
-		for step in range(12):
-			var step_x: float = 119.0 + float(step) * 0.75
-			var step_y: float = 0.55 + float(step) * 0.78
+		for step in range(13):
+			var step_x: float = 127.0 - float(step) * 0.68
+			var step_y: float = 0.55 + float(step) * 0.84
 			_vis_box(Vector3(1.05, 0.18, 2.4), Vector3(step_x, step_y, side_z * 8.6), concrete_mat)
-		_vis_box(Vector3(0.16, 0.16, 10.0), Vector3(123.5, 5.2, side_z * 8.6), steel_mat)
+		_vis_box(Vector3(2.0, 0.24, 4.6), Vector3(118.2, 10.82, side_z * 7.5), platform_mat)
+		_vis_box(Vector3(0.16, 0.16, 10.0), Vector3(123.0, 5.3, side_z * 8.6), steel_mat)
 
 	# Tren de cuatro coches articulados, con ventanas, puertas y testeros.
 	var train_body_mat := PBRMaterials.make_car_paint_material(Color(0.67, 0.13, 0.17), 0.24, 0.62)
