@@ -551,62 +551,105 @@ func _build_urban_street_props(block_centers: Array) -> void:
 			_vis_box(Vector3(2.2, 0.38, 0.06), Vector3(wx, 0.74, wz - 0.22 if wz < 0 else wz + 0.22), bench_wood)
 
 func _build_elevated_train() -> void:
-	# Puente elevado de hormigón y acero con celosía y vías dobles
-	var steel_mat := PBRMaterials.make_metal_material(Color(0.15, 0.17, 0.21), 0.85, 0.38)
-	var pillar_mat := PBRMaterials.make_concrete_material(Color(0.24, 0.26, 0.30), 0.78)
-	var rail_mat := PBRMaterials.make_metal_material(Color(0.68, 0.72, 0.78), 0.95, 0.22)
-	var sleeper_mat := PBRMaterials.make_pbr_standard(Color(0.28, 0.22, 0.16), 0.85, 0.0)
+	# Metro elevado: viaducto urbano, doble vía y estación central.
+	# Se mantienen las coordenadas del mundo y el movimiento existente de train_cars.
+	var steel_mat := PBRMaterials.make_metal_material(Color(0.16, 0.19, 0.23), 0.88, 0.32)
+	var dark_steel_mat := PBRMaterials.make_metal_material(Color(0.075, 0.09, 0.12), 0.92, 0.28)
+	var concrete_mat := PBRMaterials.make_concrete_material(Color(0.31, 0.33, 0.36), 0.82)
+	var concrete_dark_mat := PBRMaterials.make_concrete_material(Color(0.19, 0.21, 0.24), 0.86)
+	var rail_mat := PBRMaterials.make_metal_material(Color(0.62, 0.68, 0.74), 0.96, 0.18)
+	var sleeper_mat := PBRMaterials.make_pbr_standard(Color(0.20, 0.18, 0.16), 0.88, 0.0)
+	var safety_mat := PBRMaterials.make_pbr_standard(Color(0.82, 0.67, 0.22), 0.72, 0.0)
+	var glass_mat := PBRMaterials.make_glass_material(Color(0.20, 0.31, 0.39), 0.12, Color(0.12, 0.19, 0.25), 0.35)
 
-	# Tablero principal del puente elevado
-	_create_solid_box(Vector3(360.0, 1.2, 7.6), Vector3(0, 9.5, 0), steel_mat)
+	# Cimentación visual y tablero principal continuo.
+	_create_solid_box(Vector3(360.0, 1.35, 8.4), Vector3(0.0, 9.45, 0.0), concrete_dark_mat)
+	_vis_box(Vector3(360.0, 0.22, 8.8), Vector3(0.0, 10.18, 0.0), concrete_mat)
+	_vis_box(Vector3(360.0, 0.34, 0.42), Vector3(0.0, 8.72, -3.65), dark_steel_mat)
+	_vis_box(Vector3(360.0, 0.34, 0.42), Vector3(0.0, 8.72, 3.65), dark_steel_mat)
 
-	# Pilares macizos de soporte de hormigón y vigas transversales
-	for px in range(-150, 151, 30):
-		_create_solid_box(Vector3(1.6, 9.0, 1.6), Vector3(px, 4.5, -3.5), pillar_mat)
-		_create_solid_box(Vector3(1.6, 9.0, 1.6), Vector3(px, 4.5, 3.5), pillar_mat)
-		_create_solid_box(Vector3(1.8, 0.8, 8.6), Vector3(px, 8.6, 0), steel_mat)
+	# Pórticos laterales: los apoyos quedan fuera de la calzada central (Z = -8..8).
+	# Se deja libre el tramo de estación para no atravesar plataformas ni accesos.
+	for px in range(-165, 166, 30):
+		if px >= 60 and px <= 120:
+			continue
+		for side_z in [-10.5, 10.5]:
+			_create_solid_box(Vector3(1.45, 8.0, 1.45), Vector3(float(px), 4.0, side_z), concrete_mat)
+			_vis_box(Vector3(2.0, 0.55, 2.0), Vector3(float(px), 8.15, side_z), concrete_dark_mat)
+		_vis_box(Vector3(2.0, 0.75, 23.0), Vector3(float(px), 8.55, 0.0), concrete_mat)
 
-	# Barandillas de celosía Warren en los laterales del puente
-	for side_z in [-3.7, 3.7]:
-		_vis_box(Vector3(360.0, 0.22, 0.15), Vector3(0, 10.8, side_z), steel_mat)
-		_vis_box(Vector3(360.0, 0.22, 0.15), Vector3(0, 10.3, side_z), steel_mat)
-		for gx in range(-175, 176, 5):
-			_vis_cyl(0.04, 1.0, Vector3(float(gx), 10.5, side_z), steel_mat)
+	# Vigas longitudinales y rigidizadores del viaducto.
+	for side_z in [-3.85, 3.85]:
+		_vis_box(Vector3(360.0, 0.52, 0.48), Vector3(0.0, 9.0, side_z), dark_steel_mat)
+		_vis_box(Vector3(360.0, 0.18, 0.22), Vector3(0.0, 10.72, side_z), steel_mat)
+		for gx in range(-175, 176, 10):
+			_vis_box(Vector3(0.18, 1.55, 0.18), Vector3(float(gx), 9.85, side_z), steel_mat)
 
-	# Doble vía férrea con traviesas y rieles de acero brillante
-	for tx in range(-178, 179, 2):
-		_vis_box(Vector3(0.26, 0.10, 2.6), Vector3(float(tx), 10.15, -1.6), sleeper_mat)
-		_vis_box(Vector3(0.26, 0.10, 2.6), Vector3(float(tx), 10.15, 1.6), sleeper_mat)
+	# Doble vía con traviesas espaciadas para reducir geometría innecesaria.
+	for tx in range(-178, 179, 3):
+		_vis_box(Vector3(0.32, 0.12, 3.0), Vector3(float(tx), 10.36, -1.6), sleeper_mat)
+		_vis_box(Vector3(0.32, 0.12, 3.0), Vector3(float(tx), 10.36, 1.6), sleeper_mat)
+	for rail_z in [-2.28, -0.92, 0.92, 2.28]:
+		_vis_box(Vector3(360.0, 0.16, 0.12), Vector3(0.0, 10.48, rail_z), rail_mat)
+	# Pasarela técnica estrecha y bordes de seguridad.
+	_vis_box(Vector3(360.0, 0.12, 0.48), Vector3(0.0, 10.35, -3.45), concrete_mat)
+	_vis_box(Vector3(360.0, 0.12, 0.48), Vector3(0.0, 10.35, 3.45), concrete_mat)
 
-	_vis_box(Vector3(360.0, 0.12, 0.08), Vector3(0, 10.25, -2.25), rail_mat)
-	_vis_box(Vector3(360.0, 0.12, 0.08), Vector3(0, 10.25, -0.95), rail_mat)
-	_vis_box(Vector3(360.0, 0.12, 0.08), Vector3(0, 10.25, 0.95), rail_mat)
-	_vis_box(Vector3(360.0, 0.12, 0.08), Vector3(0, 10.25, 2.25), rail_mat)
+	# Estación elevada: plataformas laterales, cubierta, pilares y señalización.
+	var platform_mat := PBRMaterials.make_concrete_material(Color(0.43, 0.45, 0.47), 0.76)
+	var roof_mat := PBRMaterials.make_metal_material(Color(0.12, 0.15, 0.19), 0.84, 0.30)
+	var station_glass := PBRMaterials.make_glass_material(Color(0.28, 0.43, 0.52), 0.08, Color(0.12, 0.20, 0.27), 0.55)
+	var sign_mat := PBRMaterials.make_neon_material(Color(0.20, 0.72, 0.92), 1.8)
+	for side_z in [-5.15, 5.15]:
+		_create_solid_box(Vector3(58.0, 0.42, 2.8), Vector3(90.0, 10.92, side_z), platform_mat)
+		_vis_box(Vector3(58.0, 0.10, 0.22), Vector3(90.0, 11.18, side_z + (1.25 if side_z > 0.0 else -1.25)), safety_mat)
+		_vis_box(Vector3(58.0, 0.16, 0.18), Vector3(90.0, 11.24, side_z), dark_steel_mat)
+		for sx in [65.0, 80.0, 95.0, 110.0]:
+			_vis_box(Vector3(0.34, 5.2, 0.34), Vector3(sx, 13.65, side_z), steel_mat)
+	# Marquesina alta sobre las vías, con cubierta segmentada.
+	_vis_box(Vector3(62.0, 0.42, 15.0), Vector3(90.0, 16.55, 0.0), roof_mat)
+	_vis_box(Vector3(62.0, 0.18, 14.2), Vector3(90.0, 16.28, 0.0), station_glass)
+	for sx in [60.0, 75.0, 90.0, 105.0, 120.0]:
+		_vis_box(Vector3(0.32, 5.0, 0.32), Vector3(sx, 13.75, 0.0), steel_mat)
+	# Mamparas de viento y señal de estación a ambos lados.
+	for side_z in [-6.35, 6.35]:
+		_vis_box(Vector3(48.0, 2.1, 0.12), Vector3(90.0, 12.55, side_z), station_glass)
+	_vis_box(Vector3(12.0, 1.0, 0.18), Vector3(90.0, 15.65, -7.62), sign_mat)
+	_vis_box(Vector3(12.0, 1.0, 0.18), Vector3(90.0, 15.65, 7.62), sign_mat)
 
-	# Metro nocturno pasando periódicamente por las vías elevadas
-	var train_mat := PBRMaterials.make_car_paint_material(Color(0.72, 0.14, 0.18), 0.22, 0.65)
-	var win_mat := PBRMaterials.make_glass_material(Color(1.0, 0.94, 0.70), 0.10, Color(1.0, 0.88, 0.55), 2.4)
-	var head_neon := PBRMaterials.make_neon_material(Color(1.0, 0.96, 0.86), 5.0)
+	# Escaleras exteriores simplificadas, colocadas en los extremos de la estación.
+	for side_z in [-1.0, 1.0]:
+		for step in range(12):
+			var step_x: float = 119.0 + float(step) * 0.75
+			var step_y: float = 0.55 + float(step) * 0.78
+			_vis_box(Vector3(1.05, 0.18, 2.4), Vector3(step_x, step_y, side_z * 8.6), concrete_mat)
+		_vis_box(Vector3(0.16, 0.16, 10.0), Vector3(123.5, 5.2, side_z * 8.6), steel_mat)
 
+	# Tren de cuatro coches articulados, con ventanas, puertas y testeros.
+	var train_body_mat := PBRMaterials.make_car_paint_material(Color(0.67, 0.13, 0.17), 0.24, 0.62)
+	var train_roof_mat := PBRMaterials.make_metal_material(Color(0.20, 0.22, 0.25), 0.72, 0.38)
+	var window_mat := PBRMaterials.make_glass_material(Color(0.10, 0.20, 0.28), 0.08, Color(0.12, 0.23, 0.31), 0.45)
+	var light_mat := PBRMaterials.make_neon_material(Color(1.0, 0.86, 0.62), 2.2)
+	var door_mat := PBRMaterials.make_metal_material(Color(0.34, 0.37, 0.41), 0.78, 0.30)
 	for i in range(4):
 		var car := Node3D.new()
-		car.position = Vector3(-160.0 + i * 15.5, 11.8, 0)
-		_vis_box_on(car, Vector3(14.0, 3.2, 3.5), Vector3.ZERO, train_mat)
-		_vis_box_on(car, Vector3(12.2, 1.1, 3.6), Vector3(0, 0.45, 0), win_mat)
+		car.name = "MetroCar_%02d" % i
+		car.position = Vector3(-160.0 + float(i) * 15.5, 11.95, 0.0)
+		_vis_box_on(car, Vector3(14.0, 3.0, 3.25), Vector3.ZERO, train_body_mat)
+		_vis_box_on(car, Vector3(13.2, 0.24, 3.32), Vector3(0.0, 1.58, 0.0), train_roof_mat)
+		for window_x in [-4.8, -2.4, 0.0, 2.4, 4.8]:
+			_vis_box_on(car, Vector3(1.75, 1.12, 0.055), Vector3(window_x, 0.35, -1.64), window_mat)
+			_vis_box_on(car, Vector3(1.75, 1.12, 0.055), Vector3(window_x, 0.35, 1.64), window_mat)
+		for door_x in [-3.6, 3.6]:
+			_vis_box_on(car, Vector3(0.82, 2.25, 0.07), Vector3(door_x, -0.25, -1.66), door_mat)
+			_vis_box_on(car, Vector3(0.82, 2.25, 0.07), Vector3(door_x, -0.25, 1.66), door_mat)
+		for bogie_x in [-4.6, 4.6]:
+			_vis_box_on(car, Vector3(2.2, 0.42, 2.6), Vector3(bogie_x, -1.55, 0.0), dark_steel_mat)
 		if i == 3:
-			_vis_box_on(car, Vector3(0.2, 0.45, 0.95), Vector3(7.1, 0.2, 0), head_neon)
-			var spot := SpotLight3D.new()
-			spot.light_color = Color(1.0, 0.96, 0.85)
-			spot.light_energy = 5.5
-			spot.spot_range = 45.0
-			spot.spot_angle = 32.0
-			spot.rotation_degrees = Vector3(0, -90, 0)
-			spot.position = Vector3(7.2, 0.2, 0)
-			car.add_child(spot)
-
+			_vis_box_on(car, Vector3(0.18, 0.55, 1.0), Vector3(7.08, 0.12, 0.0), light_mat)
+			_vis_box_on(car, Vector3(0.18, 0.55, 1.0), Vector3(-7.08, 0.12, 0.0), light_mat)
 		add_child(car)
 		train_cars.append(car)
-
 
 func _build_interior() -> void:
 	# Taller Clandestino interior ubicado en Y = -50
