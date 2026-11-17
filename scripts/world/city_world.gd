@@ -31,15 +31,22 @@ var sector_manager: WorldSectorManager = null
 
 func _ready() -> void:
 	current_op = GameState.get_current_operation()
+
 	_setup_environment()
 	_build_city_grid()
 	_build_elevated_train()
 	_build_interior()
 	_setup_open_world_sectors()
+
+	# NUEVO: Montañas y bosques del mundo abierto
+	var landscape = load("res://scripts/world/landscape_generator.gd").new()
+	landscape.name = "LandscapeGenerator"
+	add_child(landscape)
+	landscape.build_landscape()
+
 	_spawn_entities()
 	_setup_hud()
 	_setup_chapter_mission()
-
 func _setup_open_world_sectors() -> void:
 	sector_manager = WorldSectorManager.new()
 	sector_manager.name = "WorldSectorManager"
